@@ -1,0 +1,10 @@
+version: '3'
+services:
+  backend:
+    image: backend-image:backendDocker
+    # Voeg eventuele extra configuratie voor de backend toe, zoals poorten, omgevingsvariabelen, volumes, enz.
+
+  frontend:
+    image: frontend-image:latest
+    ports:
+      - "80:80"
