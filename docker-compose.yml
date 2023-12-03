@@ -8,3 +8,18 @@ services:
     image: frontend-image:latest
     ports:
       - "80:80"
+
+  mysql:
+    image: mysql:latest
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql_data:/var/lib/mysql
+    networks:
+      - sql-netwerk
+
+volumes:
+  mysql_data:
+
+networks:
+  sql-netwerk:
+    external: true  # Dit betekent dat het netwerk mogelijk elders is gedefinieerd
