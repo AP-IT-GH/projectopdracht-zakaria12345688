@@ -2,24 +2,45 @@ version: '3'
 services:
   backend:
     image: backend-image:backendDocker
-    # Voeg eventuele extra configuratie voor de backend toe, zoals poorten, omgevingsvariabelen, volumes, enz.
+    networks:
+      - netwerk1
+      - default
+    depends_on:
+      - mysql
+    labels:
+      - "traefik.http.routers.backend.rule=Host(`s143299.devops-ap.be`) && PathPrefix(`/api/`)"
+      - "traefik.http.routers.backend.tls=true"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.services.backend-service.loadbalancer.server.port=3000"
 
   frontend:
     image: frontend-image:latest
-    ports:
-      - "80:80"
+    networks:
+        - netwerk1
+    labels:
+      - "traefik.http.routers.frontend.rule=Host(`s143299.devops-ap.be`)&& PathPrefix(`/api/`) "
+      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
 
   mysql:
     image: mysql:latest
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      - mysql_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "examen"
+      MYSQL_USER: "usr"
+      MYSQL_PASSWORD: "user_pwd"
     networks:
-      - sql-netwerk
-
-volumes:
-  mysql_data:
+      - netwerk1
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
 networks:
-  sql-netwerk:
-    external: true  # Dit betekent dat het netwerk mogelijk elders is gedefinieerd
+  netwerk1:
+    external: true
+    name: traefik
+
+volumes:
+  mysql-data:

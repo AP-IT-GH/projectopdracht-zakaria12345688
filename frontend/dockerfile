@@ -1,5 +1,2 @@
-# Gebruik de officiële Nginx image als basis
 FROM nginx
-
-# Kopieer de lokale bestanden naar de Nginx server
 COPY . /usr/share/nginx/html
