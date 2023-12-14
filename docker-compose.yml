@@ -1,46 +1,56 @@
-version: '3'
+version: "3"
 services:
-  backend:
-    image: backend-image:backendDocker
-    networks:
-      - netwerk1
-      - default
-    depends_on:
-      - mysql
+  todo-api-service:
+    build:
+      context: ./backend
+    environment:
+      STORAGE: mysql
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PWD: ${MYSQL_PWD}
+      MYSQL_DB: ${MYSQL_DB}
     labels:
-      - "traefik.http.routers.backend.rule=Host(`s143299.devops-ap.be`) && PathPrefix(`/api/`)"
-      - "traefik.http.routers.backend.tls=true"
-      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.services.backend-service.loadbalancer.server.port=3000"
+      - "traefik.http.routers.todo-api.rule=Host(`s143299.devops-ap.be`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.todo-api.tls=true"
+      - "traefik.http.routers.todo-api.tls.certresolver=letsencrypt"
+    networks:
+      - proxy
+      - database
 
   frontend:
-    image: frontend-image:latest
-    networks:
-        - netwerk1
-    labels:
-      - "traefik.http.routers.frontend.rule=Host(`s143299.devops-ap.be`)&& PathPrefix(`/api/`) "
-      - "traefik.http.routers.frontend.tls=true"
-      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
-
-  mysql:
-    image: mysql:latest
-    environment:
-      MYSQL_ROOT_PASSWORD: "root"
-      MYSQL_DATABASE: "examen"
-      MYSQL_USER: "usr"
-      MYSQL_PASSWORD: "user_pwd"
-    networks:
-      - netwerk1
+    image: nginx:1.22
     volumes:
-      - mysql-data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      # - "./frontend/nginx.conf:/etc/nginx/nginx.conf:ro"
+      # - "./frontend:/var/www/static:ro"
+      - "./frontend:/usr/share/nginx/html:ro"
+    labels:
+      - "traefik.http.routers.todo-app.rule=Host(`s143299.devops-ap.be`) && !PathPrefix(`/api`)"
+      - "traefik.http.routers.todo-app.tls=true"
+      - "traefik.http.routers.todo-app.tls.certresolver=letsencrypt"
+    networks:
+      - proxy
+
+
+  db:
+    image: mysql:latest
+    volumes:
+      - "db-volume:/var/lib/mysql"
+      - "./init.sql:/docker-entrypoint-initdb.d/1.sql:ro"
+
+    networks:
+      - database
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PWD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_PASSWORD: ${MYSQL_PWD}
+      MYSQL_USER: ${MYSQL_USER}
+volumes:
+  db-volume:
 
 networks:
-  netwerk1:
+  proxy:
     external: true
     name: traefik
-
-volumes:
-  mysql-data:
+  backend:
+  database:
